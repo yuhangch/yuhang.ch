@@ -1,5 +1,5 @@
 ---
-import {getCollection, getEntry} from 'astro:content';
+import {getCollection} from 'astro:content';
 import { getLocale } from 'astro-i18n-aut';
 
 export const prerender = false;  // Use SSR mode
@@ -7,7 +7,8 @@ export const prerender = false;  // Use SSR mode
 // Get the filename and extension from the request
 const pathname = Astro.url.pathname;
 const slugParts = pathname.split('/').filter(Boolean);
-const fullSlug = slugParts.slice(2).join('/'); // Remove 'raw' and 'posts'
+const postsIndex = slugParts.indexOf('posts');
+const fullSlug = postsIndex >= 0 ? slugParts.slice(postsIndex + 1).join('/') : '';
 const fileExtension = fullSlug.endsWith('.md') ? 'md' : 'mdx';
 const postSlug = fullSlug.replace(/\.(md|mdx)$/, '');
 

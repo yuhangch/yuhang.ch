@@ -3,6 +3,7 @@ import { getLocale, getLocaleUrl } from 'astro-i18n-aut';
 const currentLocale = getLocale(Astro.url) || 'zh';
 const nextLocale = currentLocale === 'zh' ? 'en' : 'zh';
 const localeLabel = currentLocale === 'zh' ? 'EN' : '中';
+const switchUrl = getLocaleUrl(Astro.url.pathname, nextLocale);
 ---
 
 <language-select>
@@ -11,7 +12,7 @@ const localeLabel = currentLocale === 'zh' ? 'EN' : '中';
         aria-live="polite"
         class="sl-flex"
         title={`Switch to ${nextLocale}`}
-        data-locale={currentLocale}
+        data-switch-url={switchUrl}
     >
         <span class="locale-text">{localeLabel}</span>
     </button>
@@ -69,31 +70,11 @@ const localeLabel = currentLocale === 'zh' ? 'EN' : '中';
                 if (!button) return;
 
                 button.addEventListener('click', () => {
-                    const currentPath = window.location.pathname;
-                    const currentLocale = button.getAttribute('data-locale') || 'zh';
-                    const nextLocale = currentLocale === 'zh' ? 'en' : 'zh';
-                    
-                    // Get the path without locale prefix
-                    let pathWithoutLocale = currentPath;
-                    if (currentPath.startsWith('/en/') || currentPath.startsWith('/en')) {
-                        pathWithoutLocale = currentPath.replace(/^\/en/, '') || '/';
-                    } else if (currentPath.startsWith('/zh/') || currentPath.startsWith('/zh')) {
-                        pathWithoutLocale = currentPath.replace(/^\/zh/, '') || '/';
-                    }
-                    
-                    // Ensure path starts with /
-                    if (!pathWithoutLocale.startsWith('/')) {
-                        pathWithoutLocale = '/' + pathWithoutLocale;
-                    }
-                    
-                    // Build new path with locale (default locale 'zh' doesn't need prefix)
-                    let newPath = pathWithoutLocale;
-                    if (nextLocale === 'en') {
-                        newPath = '/en' + pathWithoutLocale;
-                    }
-                    
-                    // Navigate to new path
-                    window.location.href = newPath;
+                    const switchUrl = button.getAttribute('data-switch-url');
+                    if (!switchUrl) return;
+
+                    const suffix = `${window.location.search}${window.location.hash}`;
+                    window.location.href = `${switchUrl}${suffix}`;
                 });
             }
         },

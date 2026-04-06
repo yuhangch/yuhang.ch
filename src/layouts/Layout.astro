@@ -4,6 +4,7 @@ import Header from './Header.astro'
 import Navbar from './Navbar.astro'
 import Footer from './Footer.astro'
 import {useLocale} from '@utils/locale'
+import { getLocaleUrl } from 'astro-i18n-aut'
 
 const {t, locale} = useLocale(Astro.url)
 
@@ -13,10 +14,37 @@ export interface Props {
     title: string
     navbar?: boolean
     description?: string
+    ogType?: string
+    publishedTime?: Date | string
+    modifiedTime?: Date | string
 }
 
-let {title, navbar = true, description = t('layout.description')} = Astro.props
+let {
+    title,
+    navbar = true,
+    description = t('layout.description'),
+    ogType = 'website',
+    publishedTime,
+    modifiedTime,
+} = Astro.props
 const fullTitle = `${title} - ${t('layout.title')}`
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : Astro.url.toString()
+const zhCanonical = Astro.site
+    ? new URL(getLocaleUrl(Astro.url.pathname, 'zh'), Astro.site).toString()
+    : getLocaleUrl(Astro.url.pathname, 'zh')
+const enCanonical = Astro.site
+    ? new URL(getLocaleUrl(Astro.url.pathname, 'en'), Astro.site).toString()
+    : getLocaleUrl(Astro.url.pathname, 'en')
+
+const toIsoString = (value?: Date | string) => {
+    if (!value) return undefined
+    if (value instanceof Date) return value.toISOString()
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString()
+}
+
+const publishedIso = toIsoString(publishedTime)
+const modifiedIso = toIsoString(modifiedTime)
 ---
 
 <!doctype html>
@@ -24,7 +52,28 @@ const fullTitle = `${title} - ${t('layout.title')}`
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width"/>
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="zh-CN" href={zhCanonical} />
+    <link rel="alternate" hreflang="en-US" href={enCanonical} />
+    <link rel="alternate" hreflang="x-default" href={zhCanonical} />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={t('layout.title')} />
+    <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'zh_CN'} />
+    <meta property="og:locale:alternate" content={locale === 'en' ? 'zh_CN' : 'en_US'} />
+    {publishedIso && (
+        <meta property="article:published_time" content={publishedIso} />
+    )}
+    {modifiedIso && (
+        <meta property="article:modified_time" content={modifiedIso} />
+    )}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
     <title>{fullTitle}</title>
 </head>
 <body class="max-width dark:bg-stone-900 bg-[#FBFBFBFF]">

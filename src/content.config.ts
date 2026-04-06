@@ -7,6 +7,7 @@ const posts = defineCollection({
     schema: z.object({
         title: z.string().optional(),
         'title-en': z.string().optional(),
+        description: z.string().optional(),
         tags: z.array(z.string()).optional(),
         categories: z.array(z.string()).optional(),
         pubDate: z.coerce.date().optional(),
@@ -22,6 +23,7 @@ const postsEn = defineCollection({
     schema: z.object({
         title: z.string().optional(),
         'title-en': z.string().optional(),
+        description: z.string().optional(),
         tags: z.array(z.string()).optional(),
         categories: z.array(z.string()).optional(),
         pubDate: z.coerce.date().optional(),

@@ -29,6 +29,10 @@ export default defineConfig({
         optimizeDeps: {
             // Avoid race where a dep is in newData.optimized but not yet in metadata (browserHash undefined)
             holdUntilCrawlEnd: true,
+            // Work around Vite optimizer metadata race on this project.
+            // Astro pages here rely very little on client-side package imports,
+            // so disabling auto discovery is a stable tradeoff.
+            noDiscovery: true,
         },
     },
     compressHTML: false,

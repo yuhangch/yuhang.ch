@@ -51,7 +51,7 @@ let frontmatter = remarkPluginFrontmatter;
 
 const { lastModified } = frontmatter || {};
 
-const { categories, title, pubDate } = entry.data;
+const { categories, title, pubDate, description } = entry.data;
 const ext = filePath.split(".").pop();
 // const {Content} = await render(post);
 export async function getStaticPaths() {
@@ -88,7 +88,14 @@ export async function getStaticPaths() {
 // const title = locale === 'en' && FrontMatter['title-en'] ? FrontMatter['title-en'] : FrontMatter['title']
 ---
 
-<Layout title={title} navbar={false}>
+<Layout
+    title={title}
+    description={description}
+    ogType="article"
+    publishedTime={pubDate}
+    modifiedTime={lastModified}
+    navbar={false}
+>
     <a class="panda-link mt-6" href={path("/")}>{t("post.back")}</a>
 
     <main>
