@@ -7,7 +7,7 @@ const { t, path } = useLocale(Astro.url)
     <div class="mb-2">
         <a href="https://github.com/yuhangch" class="panda-link">{t('footer.contact')}</a>
         <span class="mx-1">|</span>
-        <a rel="prefetch-intent" href={path('/rss.xml')} class="panda-link">{t('footer.rss')}</a>
+        <a rel="prefetch-intent" data-astro-reload href={path('/rss.xml')} class="panda-link">{t('footer.rss')}</a>
         <span class="mx-1">|</span>
         <a rel="prefetch-intent" href="https://chenyuhang.cn" class="panda-link">{t('footer.collection')}</a>
         <span class="mx-1">|</span>

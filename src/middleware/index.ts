@@ -1,5 +1,7 @@
 import { defineMiddleware, sequence } from 'astro:middleware';
 import { STUDIO_SECRET } from 'astro:env/server';
+import { acceptsMarkdown } from '../utils/markdown/response';
+import { renderMarkdownRequest } from '../utils/markdown/renderers';
 
 export const handleStudioAuth = defineMiddleware(async (context, next) => {
     try {
@@ -22,4 +24,24 @@ export const handleStudioAuth = defineMiddleware(async (context, next) => {
     }
 });
 
-export const onRequest = sequence(handleStudioAuth);
+export const handleMarkdownNegotiation = defineMiddleware(async (context, next) => {
+    const pathname = context.url.pathname;
+    const isExcluded =
+        pathname.startsWith('/raw/') ||
+        pathname.startsWith('/en/raw/') ||
+        pathname.startsWith('/studio') ||
+        pathname.startsWith('/en/studio') ||
+        pathname.endsWith('.xml') ||
+        pathname.endsWith('.html') ||
+        pathname === '/404' ||
+        pathname === '/en/404';
+
+    if (!context.isPrerendered && !isExcluded && acceptsMarkdown(context.request)) {
+        const response = await renderMarkdownRequest(context.request, context.url);
+        if (response) return response;
+    }
+
+    return next();
+});
+
+export const onRequest = sequence(handleStudioAuth, handleMarkdownNegotiation);

@@ -1,80 +1,41 @@
 ---
-import {getCollection} from 'astro:content';
+import { getCollection } from 'astro:content';
 import { getLocale } from 'astro-i18n-aut';
+import { entryExtension, entryToMarkdown, findEntry } from '../../../utils/markdown/content';
+import { markdownResponse } from '../../../utils/markdown/response';
 
-export const prerender = false;  // Use SSR mode
+export const prerender = false;
 
-// Get the filename and extension from the request
 const pathname = Astro.url.pathname;
 const slugParts = pathname.split('/').filter(Boolean);
 const postsIndex = slugParts.indexOf('posts');
 const fullSlug = postsIndex >= 0 ? slugParts.slice(postsIndex + 1).join('/') : '';
-const fileExtension = fullSlug.endsWith('.md') ? 'md' : 'mdx';
+const requestedExtension = fullSlug.match(/\.(md|mdx)$/)?.[1] as 'md' | 'mdx' | undefined;
 const postSlug = fullSlug.replace(/\.(md|mdx)$/, '');
 
-// Determine locale from URL
 const locale = getLocale(Astro.url) || 'zh';
 const collectionName = locale === 'en' ? 'posts-en' : 'posts';
 
 try {
-    // Find matching entry in the collection
     const collection = await getCollection(collectionName);
-    const entry = collection.find(note => 
-        note.id === postSlug || 
-        note.id.endsWith(`/${postSlug}`)
-    );
-    
+    const entry = findEntry(collection, postSlug);
+
     if (!entry) {
         return new Response(`Entry not found for slug: ${postSlug}`, { status: 404 });
     }
-    
-    const { body, data: frontmatter } = entry;
-    
-    if (!body) {
+
+    if (!entry.body) {
         return new Response('Content not found', { status: 404 });
     }
-    
-    // Build complete Markdown content with frontmatter
-    const frontmatterYaml = Object.entries(frontmatter)
-        .map(([key, value]) => {
-            // Handle array type
-            if (Array.isArray(value)) {
-                return `${key}: [${value.map(v => `"${v}"`).join(', ')}]`;
-            }
-            // Handle date type
-            else if (value instanceof Date) {
-                return `${key}: "${value.toISOString()}"`;
-            }
-            // Handle string type (add quotes)
-            else if (typeof value === 'string') {
-                return `${key}: "${value}"`;
-            }
-            // Handle other types directly
-            else {
-                return `${key}: ${value}`;
-            }
-        })
-        .join('\n');
 
-    const fullContent = `---
-${frontmatterYaml}
----
+    const fileExtension = requestedExtension ?? entryExtension(entry);
 
-${body}`;
-
-    // Set content type based on extension
-    const contentType = fileExtension === 'md' ? 'text/markdown' : 'text/mdx';
-
-    // Return direct response, bypassing Astro's HTML rendering
-    return new Response(fullContent, {
-        headers: {
-            'Content-Type': `${contentType}; charset=utf-8`,
-            'Content-Disposition': `inline; filename="${postSlug}.${fileExtension}"`,
-            'Cache-Control': 'max-age=300'
-        }
+    return markdownResponse(entryToMarkdown(entry), {
+        contentType: `${fileExtension === 'md' ? 'text/markdown' : 'text/mdx'}; charset=utf-8`,
+        filename: `${postSlug}.${fileExtension}`,
     });
 } catch (error) {
     console.error('Error in raw content endpoint:', error);
-    return new Response(`Error: ${error.message}`, { status: 500 });
+    return new Response('Unable to load content', { status: 500 });
 }
 ---

@@ -89,7 +89,8 @@
 }
 
 article > p {
-    @apply text-justify indent-8;
+    text-align: justify;
+    text-indent: 2rem;
 }
 
 /*
@@ -99,7 +100,8 @@ article > p {
     text-decoration-color: var(--color-primary-main);
     text-underline-offset: 0.3em;
     color: rgb(var(--color-primary-main));
-    @apply mx-1;
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
 
 }
 
@@ -109,15 +111,25 @@ article > p {
 
 /* 所有 prose 内的图片都应用最大宽度限制 */
 .prose img {
-    @apply max-w-full h-auto;
+    max-width: 100%;
+    height: auto;
 }
 
 .prose figure {
-    @apply flex flex-col items-center justify-center my-6 mx-auto text-center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 1.5rem auto;
+    text-align: center;
 }
 
 .prose figure img {
-    @apply rounded-lg shadow-md max-w-full h-auto max-h-64;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    max-width: 100%;
+    height: auto;
+    max-height: 16rem;
 
     max-width: 100%;
     width: auto;
@@ -141,18 +153,22 @@ article > p {
 }
 
 .prose figcaption {
-    @apply mt-2 text-sm italic;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    font-style: italic;
     color: rgb(var(--color-text-heading));
 }
 
 /*prose link add arrow when class not have 'internal'*/
 
-.external-link {
-    @apply after:content-['↗'] after:ml-0;
+.external-link::after {
+    content: '↗';
+    margin-left: 0;
 }
 
-.prose :where(a):not(:where([data-footnote-ref], [data-footnote-backref], .not-prose, .not-prose *)):not(.internal) {
-    @apply after:content-['↗'] after:ml-0;
+.prose :where(a):not(:where([data-footnote-ref], [data-footnote-backref], .not-prose, .not-prose *)):not(.internal)::after {
+    content: '↗';
+    margin-left: 0;
 }
 
 /*prose link add ' [[ link ]] ' when class have 'internal'*/
@@ -175,13 +191,21 @@ article > p {
  * blockquote
  */
 .prose :where(blockquote):not(:where(.not-prose,.callout, .not-prose *)) {
-    @apply bg-gray-100 dark:bg-stone-800
-    text-base m-0
-    border-l-solid
-    font-normal rounded-lg
-    rounded-l-sm
-    pl-4 p-2;
+    background-color: #f3f4f6;
+    font-size: 1rem;
+    margin: 0;
+    border-left-style: solid;
+    font-weight: 400;
+    border-radius: 0.5rem;
+    border-top-left-radius: 0.125rem;
+    border-bottom-left-radius: 0.125rem;
+    padding-left: 1rem;
+    padding: 0.5rem;
     border-left: 6px solid rgb(var(--color-primary-main)) !important;
+}
+
+.dark .prose :where(blockquote):not(:where(.not-prose,.callout, .not-prose *)) {
+    background-color: #292524;
 }
 
 
@@ -189,7 +213,8 @@ article > p {
 .prose :where(ul > li):not(:where(.not-prose, .not-prose *))::marker,
 .prose :where(summary):not(:where(.not-prose, .not-prose *))::marker {
     color: rgb(var(--color-primary-main));
-    @apply mr-4 font-semibold;
+    margin-right: 1rem;
+    font-weight: 600;
 }
 
 /*
@@ -209,7 +234,8 @@ article > p {
 }
 
 [data-footnote-ref] {
-    @apply font-normal no-underline;
+    font-weight: 400;
+    text-decoration: none;
 }
 
 .transition-all {

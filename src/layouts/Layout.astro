@@ -5,6 +5,7 @@ import Navbar from './Navbar.astro'
 import Footer from './Footer.astro'
 import {useLocale} from '@utils/locale'
 import { getLocaleUrl } from 'astro-i18n-aut'
+import { ClientRouter } from 'astro:transitions'
 
 const {t, locale} = useLocale(Astro.url)
 
@@ -50,6 +51,7 @@ const modifiedIso = toIsoString(modifiedTime)
 <!doctype html>
 <html lang={locale} class="mx-4">
 <head>
+    <ClientRouter />
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width"/>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
@@ -76,12 +78,14 @@ const modifiedIso = toIsoString(modifiedTime)
     <meta name="twitter:description" content={description} />
     <title>{fullTitle}</title>
 </head>
-<body class="max-width dark:bg-stone-900 bg-[#FBFBFBFF]">
-    <Header/>
-    {navbar && <Navbar/>}
-    <main>
-        <slot/>
-    </main>
-    <Footer/>
+<body class="dark:bg-stone-900 bg-[#FBFBFBFF]">
+    <div class="max-width">
+        <Header/>
+        {navbar && <Navbar/>}
+        <main>
+            <slot/>
+        </main>
+        <Footer/>
+    </div>
 </body>
 </html>

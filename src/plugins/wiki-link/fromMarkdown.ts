@@ -1,6 +1,6 @@
 //@ts-nocheck
 
-import {isSupportedFileFormat} from "./isSupportedFileFormat";
+import {isSupportedFileFormat} from "./isSupportedFileFormat.ts";
 
 
 const defaultWikiLinkResolver = (target: string) => {

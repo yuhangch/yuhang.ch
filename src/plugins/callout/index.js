@@ -1,6 +1,6 @@
 import { visit } from "unist-util-visit";
 import { toString } from "mdast-util-to-string";
-import { zapIcon, listIcon, quoteIcon, bugIcon, infoIcon, xIcon, helpCircleIcon, alertTriangleIcon, pencilIcon, clipboardListIcon, checkCircleIcon, flameIcon, checkIcon, } from "./icons";
+import { zapIcon, listIcon, quoteIcon, bugIcon, infoIcon, xIcon, helpCircleIcon, alertTriangleIcon, pencilIcon, clipboardListIcon, checkCircleIcon, flameIcon, checkIcon, } from "./icons.js";
 /**
  * Default configuration
  * @date 3/23/2023 - 5:16:26 PM

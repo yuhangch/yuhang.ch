@@ -6,7 +6,7 @@ import {getEntry, render} from 'astro:content';
 import {useLocale} from '@utils/locale'
 import {formatDateYMD} from "@utils/format";
 import '../../styles/content.css'
-export const prerender = true;
+export const prerender = false;
 const {path, t} = useLocale(Astro.url)
 const {slug} = Astro.params
 const note = await getEntry('docs', slug);

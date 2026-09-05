@@ -1,6 +1,7 @@
 body {
     font-family: Verdana, sans-serif;
     overflow-y: scroll;
+    margin: 8px 0;
 }
 
 /* Updated selection styles with more subtle colors */
@@ -30,20 +31,22 @@ div {
 }
 
 .panda-link-static {
-    @apply hover:cursor-pointer no-underline
-    hover:underline
-    hover:underline-offset-4;
+    cursor: pointer;
+    text-decoration: none;
     color: rgb(var(--color-text-link));
 }
 
 .panda-link-static:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
     color: rgb(var(--color-text-link-hover));
     text-decoration-thickness: 0.125rem;
     text-underline-offset: 5px;
 }
 
 .panda-link {
-    @apply hover:cursor-pointer no-underline animated ;
+    cursor: pointer;
+    text-decoration: none;
     color: rgb(var(--color-text-link));
 }
 
@@ -82,20 +85,26 @@ a.animated.active:after {
 }
 
 .max-width {
-    @apply max-w-[65ch] mx-auto;
+    max-width: 65ch;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .panda-text {
-    @apply no-underline
-    cursor-pointer
-    text-blue-700
-    hover:text-blue-700;
+    cursor: pointer;
+    color: rgb(29 78 216);
+    text-decoration: none;
+}
 
-    @apply dark:text-stone-100
-    dark:hover:text-stone-100;
+.panda-text:hover {
+    color: rgb(29 78 216);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
 
-    @apply hover:underline
-    hover:underline-offset-4;
+.dark .panda-text,
+.dark .panda-text:hover {
+    color: rgb(245 245 244);
 }
 
 

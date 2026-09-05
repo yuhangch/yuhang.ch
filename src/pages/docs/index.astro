@@ -4,7 +4,7 @@ import Layout from '@layouts/Layout.astro';
 import {getCollection, getEntry, render} from "astro:content";
 import '../../styles/content.css'
 
-export const prerender = true;
+export const prerender = false;
 
 const clips = await getCollection('docs', (i) => {
     return i.id.includes('read/clips/')

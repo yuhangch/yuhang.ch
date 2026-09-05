@@ -1,6 +1,6 @@
 import {toMarkdown} from "mdast-util-wiki-link";
-import {syntax, type SyntaxOptions} from "./syntax";
-import {fromMarkdown, type FromMarkdownOptions} from "./fromMarkdown";
+import {syntax, type SyntaxOptions} from "./syntax.ts";
+import {fromMarkdown, type FromMarkdownOptions} from "./fromMarkdown.ts";
 
 let warningIssued = false;
 

@@ -1,5 +1,7 @@
 import { defineConfig, envField } from 'astro/config';
 import vercel from '@astrojs/vercel'
+import { fileURLToPath } from 'node:url'
+import { unified } from '@astrojs/markdown-remark'
 
 import UnoCSS from '@unocss/astro'
 import remarkWikiLink from "./src/plugins/wiki-link/index.ts";
@@ -26,13 +28,10 @@ import remarkFigureCaption from "@microflash/remark-figure-caption";
 export default defineConfig({
     vite: {
         plugins: [yaml()],
-        optimizeDeps: {
-            // Avoid race where a dep is in newData.optimized but not yet in metadata (browserHash undefined)
-            holdUntilCrawlEnd: true,
-            // Work around Vite optimizer metadata race on this project.
-            // Astro pages here rely very little on client-side package imports,
-            // so disabling auto discovery is a stable tradeoff.
-            noDiscovery: true,
+        resolve: {
+            alias: {
+                picomatch: fileURLToPath(new URL('./src/shims/picomatch.mjs', import.meta.url)),
+            },
         },
     },
     compressHTML: false,
@@ -59,41 +58,40 @@ export default defineConfig({
         assets: 'assets',
     },
     markdown: {
-
-        syntaxHighlight: false,
-        remarkRehype: {
-            footnoteLabel: ' '
-        },
-
-
-        remarkPlugins: [
-            remarkModifiedTime, // Run first to set lastModified before other plugins
-            remarkDirective,
-            remarkFigureCaption,
-            // RDNotePlugin,
-            [
-                remarkObsidianCallout,
-                {
-                    blockquoteClass: 'callout',
-                    titleTextTagName: "span",
-                    iconTagName: "span",
-                    // ...
-                },
+        processor: unified({
+            remarkRehype: {
+                footnoteLabel: ' '
+            },
+            remarkPlugins: [
+                remarkModifiedTime, // Run first to set lastModified before other plugins
+                remarkDirective,
+                remarkFigureCaption,
+                // RDNotePlugin,
+                [
+                    remarkObsidianCallout,
+                    {
+                        blockquoteClass: 'callout',
+                        titleTextTagName: "span",
+                        iconTagName: "span",
+                        // ...
+                    },
+                ],
+                RDBilibiliPlugin,
+                InternalLinkPlugin,
+                [remarkWikiLink, {
+                    permalinks: getPermalinks("src/content/"),
+                    pathFormat: "obsidian-short",
+                    hrefTemplate: (permalink) => {
+                        const href = permalink.replaceAll("src/content/", "/") + '/';
+                        if (!href.startsWith('/'))
+                            return '/' + href;
+                        return href;
+                    }
+                }],
+                remarkWikiLinkLocale,
             ],
-            RDBilibiliPlugin,
-            InternalLinkPlugin,
-            [remarkWikiLink, {
-                permalinks: getPermalinks("src/content/"),
-                pathFormat: "obsidian-short",
-                hrefTemplate: (permalink) => {
-                    const href = permalink.replaceAll("src/content/", "/") + '/';
-                    if (!href.startsWith('/'))
-                        return '/' + href;
-                    return href;
-                }
-            }],
-            remarkWikiLinkLocale,
-        ]
+        }),
+        syntaxHighlight: false,
     },
 
     integrations: [
