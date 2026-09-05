@@ -4,12 +4,10 @@ import Header from './Header.astro'
 import Navbar from './Navbar.astro'
 import Footer from './Footer.astro'
 import {useLocale} from '@utils/locale'
-import { getLocaleUrl } from 'astro-i18n-aut'
+import { getLocalePath, stripLocaleFromPath } from '@utils/locale'
 import { ClientRouter } from 'astro:transitions'
 
-const {t, locale} = useLocale(Astro.url)
-
-export const prerender = true
+const {t, locale} = useLocale(Astro.url, Astro.locals.locale)
 
 export interface Props {
     title: string
@@ -29,13 +27,17 @@ let {
     modifiedTime,
 } = Astro.props
 const fullTitle = `${title} - ${t('layout.title')}`
-const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).toString() : Astro.url.toString()
+const basePath = stripLocaleFromPath(Astro.locals.originalPathname ?? Astro.url.pathname)
+const canonicalPath = getLocalePath(locale, basePath)
+const canonical = Astro.site ? new URL(canonicalPath, Astro.site).toString() : canonicalPath
+const makeCanonical = (targetLocale: 'zh' | 'en') => {
+    const path = getLocalePath(targetLocale, basePath)
+    return Astro.site ? new URL(path, Astro.site).toString() : path
+}
 const zhCanonical = Astro.site
-    ? new URL(getLocaleUrl(Astro.url.pathname, 'zh'), Astro.site).toString()
-    : getLocaleUrl(Astro.url.pathname, 'zh')
-const enCanonical = Astro.site
-    ? new URL(getLocaleUrl(Astro.url.pathname, 'en'), Astro.site).toString()
-    : getLocaleUrl(Astro.url.pathname, 'en')
+    ? makeCanonical('zh')
+    : makeCanonical('zh')
+const enCanonical = makeCanonical('en')
 
 const toIsoString = (value?: Date | string) => {
     if (!value) return undefined

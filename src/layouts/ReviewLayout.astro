@@ -1,72 +1,48 @@
 ---
-import Layout from '@layouts/Layout.astro'
-import ReviewCard from '@components/ReviewCard.astro'
-import BackLater from '@components/BackLater.astro'
-import { useLocale } from '@utils/locale'
-import { reviewsLoader } from '../loaders/reviews'
-const { path, t } = useLocale(Astro.url)
-const { page } = Astro.props
+import Layout from '@layouts/Layout.astro';
+import ReviewCard from '@components/ReviewCard.astro';
+import BackLater from '@components/BackLater.astro';
+import { useLocale } from '@utils/locale';
+import { getReviewsPage, type Review } from '../services/api';
 
+const { path, t } = useLocale(Astro.url, Astro.locals.locale);
+const { page } = Astro.props;
+const currentPage = Number(page?.currentPage ?? 1);
+const result = await getReviewsPage(currentPage);
+const pageHref = (pageNumber: number | null): string | null => {
+    if (!pageNumber) return null;
+    return path(pageNumber === 1 ? '/reviews' : `/reviews/p/${pageNumber}`);
+};
 
-const loader =  reviewsLoader(page.currentPage,'')
-const { reviews, next, prev } = await loader.load()
-const pageHref = (page) => {
-    if (!page) return null
-    if (page === 1) return path(`/reviews`)
-    return path(`/reviews/p/${page}`)
-}
-// group reviews to quarter year
-const groupedReviews = reviews.reduce((acc, review) => {
-    const date = new Date(review.rated_date)
-    const year = date.getFullYear()
-    const quarter = Math.floor(date.getMonth() / 3) + 1
-    const key = `${year}Q${quarter}`
-    if (!acc[key]) {
-        acc[key] = []
-    }
-    acc[key].push(review)
-    return acc
-}, {})
+const groupedReviews = result.items.reduce<Record<string, Review[]>>((groups, review) => {
+    const date = new Date(review.rated_date);
+    const year = date.getFullYear();
+    const quarter = Math.floor(date.getMonth() / 3) + 1;
+    const key = `${year}Q${quarter}`;
+    (groups[key] ??= []).push(review);
+    return groups;
+}, {});
 ---
 
 <Layout title={t('nav.reviews')} navbar={true}>
     <div class="max-w-[65ch]">
         <div class="mt-8">
-            {
-                Object.keys(groupedReviews).map((k) => {
-                    var g = groupedReviews[k]
-                    return (
-                            <div class="mb-2">
-                                <h2 class="text-2xl italic font-bold">{k}</h2>
-                                <div class="grid grid-cols-2">
-                                    {g.map((i) => {
-                                        return <ReviewCard body={i} />
-                                    })}
-                                </div>
-                            </div>
-                    )
-                })
-            }
-            {!reviews.length && <BackLater />}
+            {Object.entries(groupedReviews).map(([key, reviews]) => (
+                <div class="mb-2">
+                    <h2 class="text-2xl italic font-bold">{key}</h2>
+                    <div class="grid grid-cols-2">
+                        {reviews.map((review) => <ReviewCard body={review} />)}
+                    </div>
+                </div>
+            ))}
+            {!result.items.length && <BackLater />}
         </div>
         <div class="mt-4">
             <span>
-                {
-                    prev && (
-                                <a  href={pageHref(prev)} class="panda-link">
-                                    {t('pagination.previous')}
-                                </a>
-                    )
-                }
+                {result.prev && <a href={pageHref(result.prev) ?? undefined} class="panda-link">{t('pagination.previous')}</a>}
             </span>
             <span class="float-right">
-                {
-                    next && (
-                                <a  href={pageHref(next)} class="panda-link">
-                                    {t('pagination.next')}
-                                </a>
-                    )
-                }
+                {result.next && <a href={pageHref(result.next) ?? undefined} class="panda-link">{t('pagination.next')}</a>}
             </span>
         </div>
     </div>

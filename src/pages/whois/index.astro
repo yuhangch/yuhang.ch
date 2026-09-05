@@ -5,7 +5,7 @@ import Layout from "../../layouts/Layout.astro";
 import ResourceCard from "../../components/ResourceCard.astro";
 import { projects, stacks } from "../../data/whois";
 
-const { t, locale } = useLocale(Astro.url);
+const { t, locale } = useLocale(Astro.url, Astro.locals.locale);
 export const prerender = false;
 
 const allWhoisEntries = await getCollection("whois");

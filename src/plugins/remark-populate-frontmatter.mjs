@@ -3,7 +3,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 /**
- * 修复 astro-i18n-aut 导致 remarkPluginFrontmatter 为空的问题
+ * Populate frontmatter for consumers that render content outside an Astro page.
  * 这个插件确保 file.data.astro.frontmatter 包含所有 frontmatter 数据
  */
 export function remarkPopulateFrontmatter() {

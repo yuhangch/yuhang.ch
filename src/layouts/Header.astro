@@ -3,7 +3,7 @@
 import { useLocale } from '@utils/locale'
 import ThemeSelect from "../components/ThemeSelect.astro";
 import LanguageSelect from "../components/LanguageSelect.astro";
-const { path } = useLocale(Astro.url)
+const { path } = useLocale(Astro.url, Astro.locals.locale)
 
 ---
 

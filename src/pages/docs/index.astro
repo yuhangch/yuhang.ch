@@ -1,25 +1,16 @@
 ---
 import {useLocale} from "@utils/locale";
 import Layout from '@layouts/Layout.astro';
-import {getCollection, getEntry, render} from "astro:content";
+import {getEntry, render} from "astro:content";
 import '../../styles/content.css'
 
 export const prerender = false;
 
-const clips = await getCollection('docs', (i) => {
-    return i.id.includes('read/clips/')
-})
-const clipsList = clips.map((clip) => {
-    return {
-        link: clip.id,
-        label: clip.data.title
-    };
-});
 const home = await getEntry('docs', 'home')
 const {Content} = await render(home);
 
 
-const {path, t, locale} = useLocale(Astro.url)
+const { t } = useLocale(Astro.url, Astro.locals.locale)
 
 const menubar = [
     {

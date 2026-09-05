@@ -8,10 +8,11 @@ if (!page) {
     throw new Error("Page parameter is required");
 }
 
-const pageIndex = parseInt(page, 10);
+const pageIndex = Number.parseInt(page, 10);
 
-if (isNaN(pageIndex) || pageIndex < 1) {
-    throw new Error(`Invalid page number: ${page}`);
+if (!Number.isInteger(pageIndex) || pageIndex < 1) {
+    Astro.response.status = 400;
+    return new Response('Invalid page number', { status: 400 });
 }
 const pageOptions = {
     currentPage: pageIndex,

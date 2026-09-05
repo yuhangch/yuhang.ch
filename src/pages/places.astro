@@ -1,19 +1,26 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { placesLoader } from "../loaders/places";
 import { useLocale } from "@utils/locale";
+import { MAPBOX_TOKEN } from "astro:env/client";
+import { getLiveCollection } from "astro:content";
+import type { Place } from "../services/api";
 
-const loader = placesLoader();
-const places = await loader.load();
+const livePlaces = await getLiveCollection("places");
+if (livePlaces.error) {
+    console.error("[places] Failed to load places:", livePlaces.error);
+    Astro.response.status = 503;
+    return new Response("Places are temporarily unavailable", { status: 503 });
+}
+const places: Place[] = (livePlaces.entries ?? []).map(({ data }) => data);
 
 // 获取 Mapbox token
-const mapboxToken = import.meta.env.MAPBOX_TOKEN;
+const mapboxToken = MAPBOX_TOKEN;
 
 // Top N 配置
 const TOP_N = 5;
 
 // 类型映射（英文到中文）
-const typeMap = {
+const typeMap: Record<string, string> = {
     restaurant: "餐厅",
     attraction: "景点",
     hotel: "酒店",
@@ -22,14 +29,14 @@ const typeMap = {
 };
 
 // 类型显示顺序
-const typeOrder = ["restaurant", "attraction", "hotel", "cafe", "shop"];
+const typeOrder = ["restaurant", "attraction", "hotel", "cafe", "shop"] as const;
 
-const { t, locale } = useLocale(Astro.url);
+const { t } = useLocale(Astro.url, Astro.locals.locale);
 
 // 数据处理：按类型分组并排序
-function processPlaces(places: any[]) {
+function processPlaces(places: Place[]): Record<string, Place[]> {
     // 按类型分组
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, Place[]> = {};
 
     places.forEach((place) => {
         const type = place.type || "other";

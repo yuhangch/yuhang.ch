@@ -1,17 +1,18 @@
 import { getCollection, getEntry } from 'astro:content';
-import { getLocale, getLocaleUrl } from 'astro-i18n-aut';
 import { projects, stacks } from '../../data/whois';
-import { momentLoader, momentsLoader } from '../../loaders/moments';
-import { placesLoader } from '../../loaders/places';
-import { reviewsLoader } from '../../loaders/reviews';
-import { getAllPosts, getPostsCollectionName } from '../content';
 import {
-    bullet,
-    entryToMarkdown,
-    findEntry,
-    formatDate,
-    markdownLink,
-} from './content';
+    getMoment,
+    getMomentsPage,
+    getPlaces,
+    getReviewsPage,
+    type Moment,
+    type Place,
+    type Review,
+} from '../../services/api';
+import { getAllPosts } from '../content';
+import { getLocalePath, type Locale } from '../locale';
+import type { PostListItem } from '../content';
+import { bullet, entryToMarkdown, formatDate, markdownLink } from './content';
 import { markdownError, markdownResponse } from './response';
 import type {
     MarkdownDocument,
@@ -31,21 +32,13 @@ const normalizedPath = (pathname: string): string => {
     return value || '/';
 };
 
-const localPath = (url: URL, locale: string): string => {
-    const pathname = normalizedPath(url.pathname);
-    if (locale === 'en' && (pathname === '/en' || pathname.startsWith('/en/'))) {
-        return normalizedPath(pathname.slice('/en'.length));
-    }
-    return pathname;
-};
-
-const localizedUrl = (path: string, locale: string): string =>
-    getLocaleUrl(path.endsWith('/') ? path : `${path}/`, locale);
+const localizedUrl = (path: string, locale: MarkdownRendererContext['locale']): string =>
+    getLocalePath(locale, path.endsWith('/') ? path : `${path}/`);
 
 const postListMarkdown = (
-    posts: Array<{ year: string; list: Array<Record<string, unknown>> }>,
+    posts: Array<{ year: string; list: PostListItem[] }>,
     tags: Set<string>,
-    locale: string,
+    locale: Locale,
     title: string,
     filter?: string,
 ): string => {
@@ -56,8 +49,8 @@ const postListMarkdown = (
     for (const year of posts) {
         output.push(`## ${year.year}`, '');
         for (const post of year.list) {
-            const postTitle = post.title ?? post['title-en'] ?? post.url ?? 'Untitled';
-            const url = localizedUrl(String(post.url), locale);
+            const postTitle = post.title ?? post.url ?? 'Untitled';
+            const url = localizedUrl(post.url, locale);
             output.push(`- ${formatDate(post.pubDate)} — ${markdownLink(postTitle, url)}`);
         }
         output.push('');
@@ -94,8 +87,10 @@ const renderPostCollection = async (
 
 const renderPost = async (context: MarkdownRendererContext): Promise<MarkdownDocument | null> => {
     const slug = (context.params.slug ?? '').replace(/\.(md|mdx)$/, '');
-    const collection = await getCollection(getPostsCollectionName(context.locale));
-    const entry = findEntry(collection, slug);
+    const collection = context.locale === 'en'
+        ? await getCollection('posts-en')
+        : await getCollection('posts');
+    const entry = collection.find((item) => item.id === slug || item.id.endsWith(`/${slug}`));
     if (!entry) return null;
 
     return {
@@ -115,9 +110,10 @@ const renderCategory = (context: MarkdownRendererContext) => {
 
 const renderTag = async (context: MarkdownRendererContext): Promise<MarkdownDocument> => {
     const requestedTag = decodeURIComponent(context.params.tag ?? '').replace(/-/g, ' ');
-    const collection = await getCollection(getPostsCollectionName(context.locale));
-    const actualTag = collection
-        .flatMap((entry) => entry.data.tags ?? [])
+    const tags: string[] = context.locale === 'en'
+        ? (await getCollection('posts-en')).flatMap((entry) => entry.data.tags ?? [])
+        : (await getCollection('posts')).flatMap((entry) => entry.data.tags ?? []);
+    const actualTag = tags
         .find((tag) => tag.replace(/\s/g, '-').toLowerCase() === (context.params.tag ?? '').toLowerCase())
         ?? requestedTag;
 
@@ -182,22 +178,19 @@ const renderWhois = async (context: MarkdownRendererContext): Promise<MarkdownDo
     return { title: context.locale === 'en' ? 'Whois' : '个人', body };
 };
 
-const value = (item: Record<string, unknown>, key: string): unknown => item[key];
-
-const momentMarkdown = (moment: Record<string, unknown>, locale: string): string => {
-    const id = value(moment, 'id');
-    const title = value(moment, locale === 'en' ? 'title_en' : 'title')
-        ?? value(moment, locale === 'en' ? 'name_en' : 'name');
+const momentMarkdown = (moment: Moment, locale: MarkdownRendererContext['locale']): string => {
+    const title = (locale === 'en' ? moment.title_en : moment.title)
+        ?? (locale === 'en' ? moment.name_en : moment.name);
     const lines = [
-        `### ${markdownLink(`#${id}`, localizedUrl(`/moments/${id}`, locale))}${title ? ` — ${title}` : ''}`,
+        `### ${markdownLink(`#${moment.id}`, localizedUrl(`/moments/${moment.id}`, locale))}${title ? ` — ${title}` : ''}`,
         '',
-        bullet('Date', value(moment, 'created_at')),
-        bullet('Location', value(moment, 'location')),
-        bullet('Tags', value(moment, 'tags')),
-        bullet('Image', value(moment, 'image')),
-        bullet('IMDB', value(moment, 'imdb_id') ? `https://www.imdb.com/title/${value(moment, 'imdb_id')}` : ''),
+        bullet('Date', moment.created_at),
+        bullet('Location', moment.location),
+        bullet('Tags', moment.tags),
+        bullet('Image', moment.image),
+        bullet('IMDB', moment.imdb_id ? `https://www.imdb.com/title/${moment.imdb_id}` : ''),
         '',
-        String(value(moment, 'body') ?? ''),
+        moment.body,
         '',
     ];
     return lines.filter((line) => line !== '').join('\n');
@@ -205,38 +198,39 @@ const momentMarkdown = (moment: Record<string, unknown>, locale: string): string
 
 const renderMoments = async (context: MarkdownRendererContext): Promise<MarkdownDocument> => {
     const page = Number(context.params.page ?? 1);
-    const result = await momentsLoader(page).load();
-    const moments = (result?.moments ?? []) as Array<Record<string, unknown>>;
+    const result = await getMomentsPage(page);
+    const moments = result.items;
     const body = [
         `# ${context.locale === 'en' ? 'Moments' : '闲话'}`,
         '',
         ...moments.map((moment) => momentMarkdown(moment, context.locale)),
         '',
-        result?.prev ? `- [Previous](${localizedUrl(result.prev === 1 ? '/moments' : `/moments/p/${result.prev}`, context.locale)})` : '',
-        result?.next ? `- [Next](${localizedUrl(`/moments/p/${result.next}`, context.locale)})` : '',
+        result.prev ? `- [Previous](${localizedUrl(result.prev === 1 ? '/moments' : `/moments/p/${result.prev}`, context.locale)})` : '',
+        result.next ? `- [Next](${localizedUrl(`/moments/p/${result.next}`, context.locale)})` : '',
         '',
     ].filter(Boolean).join('\n');
     return { title: context.locale === 'en' ? 'Moments' : '闲话', body };
 };
 
 const renderMoment = async (context: MarkdownRendererContext): Promise<MarkdownDocument> => {
-    const moment = await momentLoader(context.params.id ?? '').load();
+    const moment = await getMoment(context.params.id ?? '');
+    if (!moment) return null;
     return {
         title: `${context.locale === 'en' ? 'Moment' : '闲话'} #${context.params.id}`,
         body: `# ${context.locale === 'en' ? 'Moment' : '闲话'} #${context.params.id}\n\n${momentMarkdown(moment, context.locale)}\n`,
     };
 };
 
-const reviewMarkdown = (review: Record<string, unknown>, locale: string): string => {
-    const title = value(review, locale === 'en' ? 'title_en' : 'title') ?? 'Untitled';
-    const imdbId = value(review, 'imdb_id');
+const reviewMarkdown = (review: Review, locale: MarkdownRendererContext['locale']): string => {
+    const title = (locale === 'en' ? review.title_en : review.title) ?? 'Untitled';
+    const imdbId = review.imdb_id;
     const lines = [
         `### ${title}`,
         '',
-        bullet('Rating', value(review, 'rating')),
-        bullet('Date', formatDate(value(review, 'rated_date'))),
+        bullet('Rating', review.rating),
+        bullet('Date', formatDate(review.rated_date)),
         imdbId ? `- **IMDB**: ${markdownLink('Open', `https://www.imdb.com/title/${imdbId}`)}` : '',
-        value(review, 'moments_id') ? `- **Moment**: ${markdownLink(`#${value(review, 'moments_id')}`, localizedUrl(`/moments/${value(review, 'moments_id')}`, locale))}` : '',
+        review.moments_id ? `- **Moment**: ${markdownLink(`#${review.moments_id}`, localizedUrl(`/moments/${review.moments_id}`, locale))}` : '',
         '',
     ];
     return lines.filter(Boolean).join('\n');
@@ -244,15 +238,15 @@ const reviewMarkdown = (review: Record<string, unknown>, locale: string): string
 
 const renderReviews = async (context: MarkdownRendererContext): Promise<MarkdownDocument> => {
     const page = Number(context.params.page ?? 1);
-    const result = await reviewsLoader(page, '').load();
-    const reviews = (result?.reviews ?? []) as Array<Record<string, unknown>>;
+    const result = await getReviewsPage(page);
+    const reviews = result.items;
     const body = [
         `# ${context.locale === 'en' ? 'Reviews' : '评论'}`,
         '',
         ...reviews.map((review) => reviewMarkdown(review, context.locale)),
         '',
-        result?.prev ? `- [Previous](${localizedUrl(result.prev === 1 ? '/reviews' : `/reviews/p/${result.prev}`, context.locale)})` : '',
-        result?.next ? `- [Next](${localizedUrl(`/reviews/p/${result.next}`, context.locale)})` : '',
+        result.prev ? `- [Previous](${localizedUrl(result.prev === 1 ? '/reviews' : `/reviews/p/${result.prev}`, context.locale)})` : '',
+        result.next ? `- [Next](${localizedUrl(`/reviews/p/${result.next}`, context.locale)})` : '',
         '',
     ].filter(Boolean).join('\n');
     return { title: context.locale === 'en' ? 'Reviews' : '评论', body };
@@ -266,25 +260,25 @@ const typeNames: Record<string, string> = {
     shop: '商场',
 };
 
-const placeMarkdown = (place: Record<string, unknown>, locale: string): string => {
-    const momentsId = value(place, 'moments_id');
+const placeMarkdown = (place: Place, locale: MarkdownRendererContext['locale']): string => {
+    const momentsId = place.moments_id;
     return [
-        `### ${value(place, locale === 'en' ? 'name_en' : 'name') ?? value(place, 'name') ?? 'Unnamed place'}`,
+        `### ${(locale === 'en' ? place.name_en : place.name) ?? place.name ?? 'Unnamed place'}`,
         '',
-        bullet('Type', typeNames[String(value(place, 'type'))] ?? value(place, 'type')),
-        bullet('Location', value(place, 'location')),
-        bullet('Rating', value(place, 'rating')),
-        bullet('Visit date', value(place, 'visit_date')),
-        bullet('Description', value(place, 'description')),
-        bullet('Coordinates', value(place, 'coordinates')),
-        bullet('Photos', value(place, 'photos')),
+        bullet('Type', typeNames[String(place.type)] ?? place.type),
+        bullet('Location', place.location),
+        bullet('Rating', place.rating),
+        bullet('Visit date', place.visit_date),
+        bullet('Description', place.description),
+        bullet('Coordinates', place.coordinates),
+        bullet('Photos', place.photos),
         momentsId ? `- **Moment**: ${markdownLink(`#${momentsId}`, localizedUrl(`/moments/${momentsId}`, locale))}` : '',
         '',
     ].filter(Boolean).join('\n');
 };
 
 const renderPlaces = async (context: MarkdownRendererContext): Promise<MarkdownDocument> => {
-    const places = (await placesLoader().load()) as Array<Record<string, unknown>>;
+    const places = await getPlaces();
     return {
         title: context.locale === 'en' ? 'Places' : '吃喝玩乐',
         body: [
@@ -331,9 +325,12 @@ const routes: MarkdownRoute[] = [
     { match: (pathname) => (pathname === '/gallery' ? {} : null), render: renderGallery },
 ];
 
-export async function renderMarkdownRequest(request: Request, url: URL): Promise<Response | null> {
-    const locale = getLocale(url) || 'zh';
-    const pathname = localPath(url, locale);
+export async function renderMarkdownRequest(
+    request: Request,
+    url: URL,
+    locale: MarkdownRendererContext['locale'],
+): Promise<Response | null> {
+    const pathname = normalizedPath(url.pathname);
     const route = routes.find((candidate) => candidate.match(pathname));
     if (!route) return null;
 

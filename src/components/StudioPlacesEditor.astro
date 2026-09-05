@@ -138,12 +138,14 @@
                 return;
             }
 
-            const { data: pois } = await actions.searchPOI({ keywords, region } as any);
+            const poiResult = await actions.searchPOI({ keywords, region });
+            if (poiResult.error) throw new Error(poiResult.error.message);
+            const pois = poiResult.data;
             
             const select = document.getElementById('poi-selector') as HTMLSelectElement;
             select.innerHTML = '<option value="">Select search result</option>';
             
-            pois.forEach((poi: any) => {
+            pois.forEach((poi) => {
                 const option = document.createElement('option');
                 option.value = poi.id;
                 option.innerText = `${poi.name} - ${poi.address}`;
@@ -203,11 +205,12 @@
             if (!momentId) {
                 const myReview = getValue('my_review');
                 if (myReview.trim()) {
-                    const { data: newMomentId } = await actions.createMoment({
+                    const momentResult = await actions.createMoment({
                         tags: '吃喝玩乐',
-                        body: myReview
-                    } as any);
-                    momentId = newMomentId;
+                        body: myReview,
+                    });
+                    if (momentResult.error) throw new Error(momentResult.error.message);
+                    momentId = momentResult.data;
                 }
             }
             
@@ -224,8 +227,9 @@
                 moments_id: momentId || ''
             };
             
-            const { data: result } = await actions.createPlace(data as any);
-            if (result?.status === 201) {
+            const placeResult = await actions.createPlace(data);
+            if (placeResult.error) throw new Error(placeResult.error.message);
+            if (placeResult.data?.ok) {
                 updateNotificationMessage('Created successfully');
                 // 清空表单
                 ['name', 'location', 'rating', 'visit_date', 'my_review'].forEach(id => {
@@ -247,7 +251,7 @@
                 updateNotificationMessage('Creation failed');
             }
         } catch (error) {
-            updateNotificationMessage(`Error: ${error}`);
+            updateNotificationMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
         }
     });
 </script>
@@ -261,4 +265,4 @@
             flex-direction: column;
         }
     }
-</style> 
+</style>

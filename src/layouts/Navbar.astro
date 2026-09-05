@@ -3,7 +3,7 @@ import {useLocale} from '@utils/locale'
 
 
 const {url} = Astro
-const {path, t, locale} = useLocale(url)
+const {path, t} = useLocale(url, Astro.locals.locale)
 
 const items = [
     'moments',

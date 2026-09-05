@@ -1,9 +1,10 @@
 ---
-import { getLocale, getLocaleUrl } from 'astro-i18n-aut';
-const currentLocale = getLocale(Astro.url) || 'zh';
+import { getLocalePath, stripLocaleFromPath, useLocale } from '@utils/locale';
+const { locale: currentLocale } = useLocale(Astro.url, Astro.locals.locale);
 const nextLocale = currentLocale === 'zh' ? 'en' : 'zh';
 const localeLabel = currentLocale === 'zh' ? 'EN' : '中';
-const switchUrl = getLocaleUrl(Astro.url.pathname, nextLocale);
+const basePath = stripLocaleFromPath(Astro.locals.originalPathname ?? Astro.url.pathname);
+const switchUrl = getLocalePath(nextLocale, basePath);
 ---
 
 <language-select>

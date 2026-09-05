@@ -2,8 +2,13 @@
 import ReviewLayout from '@layouts/ReviewLayout.astro'
 export const prerender = false;
 const {page} = Astro.params
+const pageIndex = Number.parseInt(page ?? '', 10)
+if (!Number.isInteger(pageIndex) || pageIndex < 1) {
+    Astro.response.status = 400;
+    return new Response('Invalid page number', { status: 400 });
+}
 const pageOptions = {
-    currentPage: page,
+    currentPage: pageIndex,
     url: {
         current: '/reviews/p/1',
         next: '/reviews/p/2',

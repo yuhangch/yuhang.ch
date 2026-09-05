@@ -1,55 +1,56 @@
-import zh from '../locales/zh.yml'
-import en from '../locales/en.yml'
-import { getLocale, getLocaleUrl } from 'astro-i18n-aut'
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import zh from '../locales/zh.yml';
+import en from '../locales/en.yml';
 
-const getNested = (obj: any, path: string) =>
-    path.split('.').reduce((acc: any, key: string) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj)
+export const locales = ['zh', 'en'] as const;
+export type Locale = (typeof locales)[number];
+export const defaultLocale: Locale = 'zh';
 
-const useLocalePath = (lang: string) => {
-    return (path: string) => {
-        // 确保路径以 / 开头
-        if (!path.startsWith('/')) {
-            path = '/' + path
-        }
-        // 使用 astro-i18n-aut 的 getLocaleUrl 来生成正确路径
-        return getLocaleUrl(path, lang)
+const getNested = (obj: unknown, path: string): unknown => {
+    if (!obj || typeof obj !== 'object') return undefined;
+
+    return path.split('.').reduce<unknown>((current, key) => {
+        if (!current || typeof current !== 'object') return undefined;
+        return key in current ? (current as Record<string, unknown>)[key] : undefined;
+    }, obj);
+};
+
+export const normalizeLocale = (value: string | undefined): Locale =>
+    value === 'en' ? 'en' : defaultLocale;
+
+export const getLocaleFromPath = (pathname: string): Locale =>
+    pathname === '/en' || pathname.startsWith('/en/') ? 'en' : defaultLocale;
+
+export const stripLocaleFromPath = (pathname: string): string => {
+    if (pathname === '/en' || pathname.startsWith('/en/')) {
+        return pathname.slice('/en'.length) || '/';
     }
-}
+    return pathname || '/';
+};
 
-const useTranslation = (lang: string) => {
-    // 如果没有语言或语言是默认语言 zh，使用中文翻译
-    if (!lang || lang === 'zh') {
-        return (key: string) => {
-            const r = getNested(zh, key)
-            if (!r) {
-                console.warn(`Translation for "${key}" not found in zh.yml`)
-                // 如果中文没有，尝试英文
-                const enR = getNested(en, key)
-                if (enR) return enR
-                return key.split('.').pop()
-            }
-            return r
-        }
-    }
-    // 否则使用英文翻译
-    return (key: string) => {
-        const r = getNested(en, key)
-        if (!r) {
-            console.warn(`Translation for "${key}" not found in en.yml`)
-            // 如果英文没有，尝试中文
-            const zhR = getNested(zh, key)
-            if (zhR) return zhR
-            return key.split('.').pop()
-        }
-        return r
-    }
-}
+export const getLocalePath = (locale: Locale, path = '/'): string => {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return getRelativeLocaleUrl(locale, normalizedPath);
+};
 
-export const useLocale = (url: URL) => {
-    const locale = getLocale(url) || 'zh'
+const useTranslation = (locale: Locale) => {
+    const primary = locale === 'en' ? en : zh;
+    const fallback = locale === 'en' ? zh : en;
+
+    return (key: string): string => {
+        const value = getNested(primary, key) ?? getNested(fallback, key);
+        if (typeof value === 'string') return value;
+
+        console.warn(`Translation for "${key}" not found`);
+        return key.split('.').pop() ?? key;
+    };
+};
+
+export const useLocale = (url: URL, explicitLocale?: string) => {
+    const locale = normalizeLocale(explicitLocale ?? getLocaleFromPath(url.pathname));
     return {
-        path: useLocalePath(locale),
+        path: (path: string) => getLocalePath(locale, path),
         t: useTranslation(locale),
-        locale
-    }
-}
+        locale,
+    };
+};

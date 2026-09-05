@@ -1,20 +1,33 @@
 ---
-import {momentLoader} from "../../loaders/moments";
+import Layout from '@layouts/Layout.astro';
+import MomentCard from '@components/MomentCard.astro';
+import { getLiveEntry } from 'astro:content';
+import { useLocale } from '@utils/locale';
 
-import Layout from '@layouts/Layout.astro'
-import MomentCard from '@components/MomentCard.astro'
-import { useLocale } from '@utils/locale'
 export const prerender = false;
-const {id} = Astro.params;
-const loader = momentLoader(id)
-const moment = await loader.load()
+const { id } = Astro.params;
+const { t } = useLocale(Astro.url, Astro.locals.locale);
 
+if (!id) {
+    Astro.response.status = 404;
+    return new Response('Not found', { status: 404 });
+}
 
-const { t } = useLocale(Astro.url)
+const result = await getLiveEntry('moments', { id });
+if (result.error) {
+    console.error(`[moments/${id}] Failed to load moment:`, result.error);
+    Astro.response.status = 503;
+    return new Response('Moment is temporarily unavailable', { status: 503 });
+}
+const moment = result.entry?.data;
+if (!moment) {
+    Astro.response.status = 404;
+    return new Response('Not found', { status: 404 });
+}
 ---
 
-<Layout title={t('nav.moments') + ' #' + id}>
+<Layout title={`${t('nav.moments')} #${id}`}>
     <div class="mt-8">
-        <MomentCard  content={moment} />
+        <MomentCard content={moment} />
     </div>
 </Layout>

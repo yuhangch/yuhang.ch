@@ -3,20 +3,18 @@ import Layout from "@layouts/Layout.astro";
 import { useLocale } from "@utils/locale";
 import { formatDateYMD } from "@utils/format";
 import ObsidianEdit from "@components/ObsidianEdit.astro";
-import { getCollection, getEntry, render } from "astro:content";
+import { getEntry, render } from "astro:content";
 import { getPostsCollectionName } from "@utils/content";
 import "../../styles/content.css";
 
 export const prerender = false;
-const { path, t, locale } = useLocale(Astro.url);
+const { path, t, locale } = useLocale(Astro.url, Astro.locals.locale);
 const { slug } = Astro.params;
 
 // Safety check: ensure slug exists
 if (!slug) {
-    return new Response(null, {
-        status: 404,
-        statusText: "Not found",
-    });
+    Astro.response.status = 404;
+    return new Response("Not found", { status: 404 });
 }
 
 // Get the correct collection based on locale
@@ -25,65 +23,17 @@ const collectionName = getPostsCollectionName(locale);
 const entry = await getEntry(collectionName, slug);
 
 if (!entry) {
-    return new Response(null, {
-        status: 404,
-        statusText: "Not found",
-    });
+    Astro.response.status = 404;
+    return new Response("Not found", { status: 404 });
 }
 
 const { filePath } = entry;
-let renderResult;
-try {
-    // Use render function (same as docs page)
-    // This will trigger remark plugins including remark-modified-time
-    renderResult = await render(entry);
-} catch (error) {
-    // Log error for debugging, especially in build environment
-    console.error(`[posts/[...slug]] Error rendering entry ${slug}:`, error);
-    throw error;
-}
+const { Content, remarkPluginFrontmatter } = await render(entry);
 
-const { Content, remarkPluginFrontmatter } = renderResult;
-
-// 修复 astro-i18n-aut 导致 remarkPluginFrontmatter 为空的问题
-// 如果 remarkPluginFrontmatter 为空，手动填充它
-let frontmatter = remarkPluginFrontmatter;
-
-const { lastModified } = frontmatter || {};
+const { lastModified } = remarkPluginFrontmatter || {};
 
 const { categories, title, pubDate, description } = entry.data;
-const ext = filePath.split(".").pop();
-// const {Content} = await render(post);
-export async function getStaticPaths() {
-    const paths: any[] = [];
-
-    // Get Chinese posts - these will be rendered for default locale (zh)
-    const zhPosts = await getCollection("posts");
-    paths.push(
-        ...zhPosts.map((note) => {
-            return {
-                params: {
-                    slug: note.id,
-                },
-            };
-        }),
-    );
-
-    // Get English posts - these will be rendered for 'en' locale
-    // astro-i18n-aut will automatically generate /en/posts/... paths
-    const enPosts = await getCollection("posts-en");
-    paths.push(
-        ...enPosts.map((note) => {
-            return {
-                params: {
-                    slug: note.id,
-                },
-            };
-        }),
-    );
-
-    return paths;
-}
+const ext = filePath?.split(".").pop() ?? "md";
 
 // const title = locale === 'en' && FrontMatter['title-en'] ? FrontMatter['title-en'] : FrontMatter['title']
 ---

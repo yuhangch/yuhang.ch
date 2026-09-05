@@ -1,56 +1,9 @@
 ---
-import BlogListLayout from '@layouts/PostsLayout.astro'
-import {getCollection} from "astro:content";
-export const prerender = false
+import PostsLayout from '@layouts/PostsLayout.astro';
 
-export async function getStaticPaths() {
-    const paths: any[] = [];
-    
-    // Get categories from Chinese posts
-    const zhPosts = await getCollection('posts');
-    const zhCategories = [
-        ...new Set(
-            zhPosts
-                .filter((i) => i.data.categories)
-                .map((i) => i.data.categories)
-                .flat()
-        )
-    ];
-    paths.push(...zhCategories.map((category) => {
-        return {
-            params: {
-                category
-            },
-            props: {
-                category
-            }
-        }
-    }));
-    
-    // Get categories from English posts
-    const enPosts = await getCollection('posts-en');
-    const enCategories = [
-        ...new Set(
-            enPosts
-                .filter((i) => i.data.categories)
-                .map((i) => i.data.categories)
-                .flat()
-        )
-    ];
-    paths.push(...enCategories.map((category) => {
-        return {
-            params: {
-                category
-            },
-            props: {
-                category
-            }
-        }
-    }));
-    
-    return paths;
-}
-const { category } = Astro.props
+export const prerender = false;
+
+const { category } = Astro.params;
 ---
 
-<BlogListLayout tag="" category={category} />
+<PostsLayout tag="" category={category ?? ''} />

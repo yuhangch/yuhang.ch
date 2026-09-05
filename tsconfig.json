@@ -8,9 +8,8 @@
             "@styles/*": ["src/styles/*"],
             "@utils/*": ["src/utils/*"],
             "@plugins/*": ["src/plugins/*"],
-            "@assets/*": ["src/assets/*"],
-            "@loaders/*": ["src/loaders/*"]
+            "@assets/*": ["src/assets/*"]
         }
     },
-    "include": ["src/**/*.d.ts", "src/**/*.ts", "src/**/*.astro",]
+    "include": [".astro/types.d.ts", ".astro/env.d.ts", "src/**/*.d.ts", "src/**/*.ts", "src/**/*.astro"]
 }

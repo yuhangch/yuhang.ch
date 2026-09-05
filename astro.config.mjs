@@ -8,7 +8,6 @@ import remarkWikiLink from "./src/plugins/wiki-link/index.ts";
 import { getPermalinks } from "./src/plugins/wiki-link/getPermalinks.ts";
 import yaml from '@rollup/plugin-yaml'
 import expressiveCode from 'astro-expressive-code'
-import i18n from 'astro-i18n-aut/integration'
 
 // import nightOwlDark from './src/styles/expressive-code/night-owl-dark.json'
 // import nightOwlLight from './src/styles/expressive-code/night-owl-light.json'
@@ -35,24 +34,28 @@ export default defineConfig({
         },
     },
     compressHTML: false,
-    experimental: {
-
-    },
     env: {
+        validateSecrets: true,
         schema: {
-            API_URL: envField.string({ context: "server", access: "secret" }),
+            API_URL: envField.string({ context: "server", access: "public" }),
             API_SECRET: envField.string({ context: "server", access: "secret" }),
             STUDIO_SECRET: envField.string({ context: "server", access: "secret" }),
             MAPBOX_TOKEN: envField.string({ context: "client", access: "public" }),
-            AMAP_KEY: envField.string({ context: "client", access: "public" }),
+            AMAP_KEY: envField.string({ context: "server", access: "secret" }),
         }
     },
-    serverIslands: true,
-
-    prefetch: true,
+    i18n: {
+        locales: ['zh', 'en'],
+        defaultLocale: 'zh',
+        routing: 'manual',
+    },
+    prefetch: {
+        prefetchAll: false,
+        defaultStrategy: 'hover',
+    },
     site: 'https://yuhang.ch',
     scopedStyleStrategy: 'where',
-    // trailingSlash: 'always',
+    trailingSlash: 'always',
     build: {
         format: 'directory',
         assets: 'assets',
@@ -106,14 +109,8 @@ export default defineConfig({
         mdx({
             extendMarkdownConfig: true, // Ensure MDX inherits markdown config including remark plugins
         }),
-        i18n({
-            defaultLocale: 'zh',
-            locales: {
-                zh: 'zh-CN',
-                en: 'en-US',
-            },
-        }),
-    ], output: 'server',
+    ],
+    output: 'server',
     adapter: vercel({
         // functionPerRoute: false
     })

@@ -64,6 +64,7 @@
 
 <script>
     import { actions } from 'astro:actions';
+    import type { MediaEntity } from '../services/api';
 
     function updateNotificationMessage(msg: string) {
         const notification = document.getElementById('notification');
@@ -74,23 +75,26 @@
 
     async function search(keyword: string) {
 
-        const { data } = await actions.searchMedia({keyword} as any);
-        return data || [];
+        const result = await actions.searchMedia({ keyword });
+        if (result.error) throw new Error(result.error.message);
+        return result.data;
     }
 
     async function findEntityByTMDBId(id: string, type: string) {
        
-        const { data } = await actions.findEntityByTMDBId({
+        const result = await actions.findEntityByTMDBId({
             id: id,
-            type: type
-        } as any);
-        return data;
+            type: type as 'movie' | 'tv' | 'tv_episode' | 'tv_season',
+        });
+        if (result.error) throw new Error(result.error.message);
+        return result.data;
     }
 
     async function findEntity(imdb_id: string) {
 
-        const { data } = await actions.findEntity({imdb_id} as any);
-        return data;
+        const result = await actions.findEntity({ imdb_id });
+        if (result.error) throw new Error(result.error.message);
+        return result.data;
     }
 
     document.getElementById('item-selector')?.addEventListener('change', async (e) => {
@@ -130,10 +134,10 @@
         }
     });
 
-    const setValue = (id: string, value: string | number) => {
+    const setValue = (id: string, value: string | number | null | undefined) => {
         const el = document.getElementById(id) as HTMLInputElement;
         if (el) {
-            el.value = value.toString();
+            el.value = value == null ? '' : value.toString();
         }
     };
 
@@ -142,12 +146,13 @@
         return el ? el.value : '';
     };
 
-    function fillFields(entity: any) {
-        setValue('id', entity.imdb_id);
-        setValue('title', entity.title);
-        setValue('title_en', entity.title_en);
-        setValue('media-type', entity.media_type);
-        setValue('rating', entity.imdb_rating);
+    function fillFields(nextEntity: MediaEntity) {
+        entity = nextEntity;
+        setValue('id', nextEntity.imdb_id);
+        setValue('title', nextEntity.title);
+        setValue('title_en', nextEntity.title_en);
+        setValue('media-type', nextEntity.media_type);
+        setValue('rating', nextEntity.imdb_rating);
         // clean content
         setValue('content', '');
     }
@@ -160,7 +165,7 @@
         }
     });
 
-    let entity: any = null;
+    let entity: MediaEntity | null = null;
 
     function getEditedEntity() {
         return {
@@ -185,7 +190,9 @@
                 const tag = "影评";
                 const content = getValue('content');
                 
-                const { data: momentId } = await actions.createMoment({tags:tag,body:content} as any );
+                const momentResult = await actions.createMoment({ tags: tag, body: content });
+                if (momentResult.error) throw new Error(momentResult.error.message);
+                const momentId = momentResult.data;
                 lastRowId = momentId;
             }
             
@@ -197,15 +204,16 @@
             const editedEntity = getEditedEntity();
             editedEntity.moments_id = lastRowId;
             
-            const { data } = await actions.createReview(editedEntity as any);
+            const reviewResult = await actions.createReview(editedEntity);
+            if (reviewResult.error) throw new Error(reviewResult.error.message);
             
-            if (data?.status === 201) {
+            if (reviewResult.data?.ok) {
                 updateNotificationMessage(`Success to create review link moment ${lastRowId}`);
             } else {
                 updateNotificationMessage('Failed to create review');
             }
-        } catch (e) {
-            updateNotificationMessage(e.toString());
+        } catch (error) {
+            updateNotificationMessage(error instanceof Error ? error.message : String(error));
         }
     });
 </script>

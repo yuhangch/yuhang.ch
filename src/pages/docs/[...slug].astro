@@ -1,86 +1,57 @@
 ---
-import Layout from '@layouts/Layout.astro'
-import {getCollection} from "astro:content";
-import ObsidianEdit from "@components/ObsidianEdit.astro";
-import {getEntry, render} from 'astro:content';
-import {useLocale} from '@utils/locale'
-import {formatDateYMD} from "@utils/format";
-import '../../styles/content.css'
+import Layout from '@layouts/Layout.astro';
+import ObsidianEdit from '@components/ObsidianEdit.astro';
+import { getEntry, render } from 'astro:content';
+import { useLocale } from '@utils/locale';
+import { formatDateYMD } from '@utils/format';
+import '../../styles/content.css';
+
 export const prerender = false;
-const {path, t} = useLocale(Astro.url)
-const {slug} = Astro.params
+const { path, t } = useLocale(Astro.url, Astro.locals.locale);
+const { slug } = Astro.params;
+
+if (!slug) {
+    Astro.response.status = 404;
+    return new Response('Not found', { status: 404 });
+}
+
 const note = await getEntry('docs', slug);
+if (!note) {
+    Astro.response.status = 404;
+    return new Response('Not found', { status: 404 });
+}
 
-
-
-
-const {title} = note.data
-const {Content,remarkPluginFrontmatter} = await render(note);
-const {lastModified} = remarkPluginFrontmatter || {}
-
-export async function getStaticPaths() {
-    const docs = await getCollection('docs');
-    const paths = docs.map((note) => {
-        return {
-            params: {
-                slug: note.id,
-            },
-        };
-    });
-    return paths;
-};
+const { title } = note.data;
+const { Content, remarkPluginFrontmatter } = await render(note);
+const { lastModified } = remarkPluginFrontmatter ?? {};
 ---
 
 <Layout title={title} navbar={true}>
-
-    <main >
-
-
+    <main>
         <div class="mt-6">
-            <h1 class="text-4xl">{title} </h1>
-            <div class="flex sm:flex-row  flex-col rounded-lg bg-stone-100 dark:bg-stone-800 p-2 px-4">
-
-                <!--<a >-->
-                    {
-
-                        <span class="mr-2">
-                                    <a class="panda-link" href={`/docs/`} >home </a>
-                                </span>
-                    }
-                    {
-                        slug.split('/').map((part, index, array) => {
-                            const url = array.slice(0, index + 1).join('/');
-                            return (
-                                    <span class="mr-2  sm:mt-0 mt-1">
-                                    <a class="panda-link" href={`/docs/${url}/`} >
-                                       / {part}</a>
-                                </span>
-                            );
-                        })
-                    }
-                <!--</a>-->
-                <!--<span class="ml-auto mr-4 text-sm font-normal"> {t('post.post_at')} </span>-->
+            <h1 class="text-4xl">{title}</h1>
+            <div class="flex sm:flex-row flex-col rounded-lg bg-stone-100 dark:bg-stone-800 p-2 px-4">
+                <span class="mr-2"><a class="panda-link" href={path('/docs/')}>home</a></span>
+                {slug.split('/').map((part, index, array) => {
+                    const url = array.slice(0, index + 1).join('/');
+                    return (
+                        <span class="mr-2 sm:mt-0 mt-1">
+                            <a class="panda-link" href={path(`/docs/${url}/`)}>/ {part}</a>
+                        </span>
+                    );
+                })}
             </div>
         </div>
         <article class="prose dark:prose-invert prose-neutral max-w-prose mt-6">
-            <Content/>
-            {
-
-                <div class="mt-9 flex text-sm font-italic opacity-80">
-                    <ObsidianEdit/>
-
-                    <span class="ml-auto">
-                    {lastModified ? (
-                        <>
-                            {t('post.last_modified_at')} {formatDateYMD(lastModified)}
-                        </>
-                    ) : (
-                        t('post.no_modified_time')
-                    )}
+            <Content />
+            <div class="mt-9 flex text-sm font-italic opacity-80">
+                <ObsidianEdit />
+                <span class="ml-auto">
+                    {lastModified
+                        ? `${t('post.last_modified_at')} ${formatDateYMD(lastModified)}`
+                        : t('post.no_modified_time')}
                 </span>
-                </div>
-
-            }
+            </div>
         </article>
     </main>
 </Layout>

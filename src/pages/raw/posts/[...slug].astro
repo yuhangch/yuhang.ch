@@ -1,24 +1,20 @@
 ---
 import { getCollection } from 'astro:content';
-import { getLocale } from 'astro-i18n-aut';
-import { entryExtension, entryToMarkdown, findEntry } from '../../../utils/markdown/content';
+import { entryExtension, entryToMarkdown } from '../../../utils/markdown/content';
 import { markdownResponse } from '../../../utils/markdown/response';
 
 export const prerender = false;
 
-const pathname = Astro.url.pathname;
-const slugParts = pathname.split('/').filter(Boolean);
-const postsIndex = slugParts.indexOf('posts');
-const fullSlug = postsIndex >= 0 ? slugParts.slice(postsIndex + 1).join('/') : '';
+const fullSlug = Astro.params.slug ?? '';
 const requestedExtension = fullSlug.match(/\.(md|mdx)$/)?.[1] as 'md' | 'mdx' | undefined;
 const postSlug = fullSlug.replace(/\.(md|mdx)$/, '');
 
-const locale = getLocale(Astro.url) || 'zh';
-const collectionName = locale === 'en' ? 'posts-en' : 'posts';
-
+const locale = Astro.locals.locale;
 try {
-    const collection = await getCollection(collectionName);
-    const entry = findEntry(collection, postSlug);
+    const collection = locale === 'en'
+        ? await getCollection('posts-en')
+        : await getCollection('posts');
+    const entry = collection.find((item) => item.id === postSlug || item.id.endsWith(`/${postSlug}`));
 
     if (!entry) {
         return new Response(`Entry not found for slug: ${postSlug}`, { status: 404 });

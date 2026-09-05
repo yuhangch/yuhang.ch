@@ -2,7 +2,7 @@
 import {useLocale} from "../../utils/locale";
 import Layout from "@layouts/Layout.astro";
 
-const {t, locale} = useLocale(Astro.url)
+const {t} = useLocale(Astro.url, Astro.locals.locale)
 ---
 
 <Layout title={t('nav.gallery')} navbar={true}>

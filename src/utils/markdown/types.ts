@@ -8,10 +8,11 @@ export interface MarkdownDocument {
 export interface MarkdownRendererContext {
     request: Request;
     url: URL;
-    locale: string;
+    locale: Locale;
     params: Record<string, string | undefined>;
 }
 
 export type MarkdownRenderer = (
     context: MarkdownRendererContext,
 ) => Promise<MarkdownDocument | null>;
+import type { Locale } from '../../utils/locale';

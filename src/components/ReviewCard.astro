@@ -1,14 +1,16 @@
 ---
 import { useLocale } from '@utils/locale'
 import {formatDateYMD} from "../utils/format";
-const { t, locale } = useLocale(Astro.url)
+import type { Review } from '../services/api';
+interface Props { body: Review }
+const { t, locale } = useLocale(Astro.url, Astro.locals.locale)
 const { imdb_id, title, title_en, rating, rated_date, moments_id } = Astro.props.body
 
 const ratedDateISO = new Date(rated_date)
 
 const imdb_url = `https://www.imdb.com/title/${imdb_id}`
-function stringRateToStarString(rating) {
-    const rate = parseFloat(rating) / 2
+function stringRateToStarString(rating: string | number): string {
+    const rate = Number(rating) / 2
     const fullStar = Math.floor(rate)
     const halfStar = rate - fullStar > 0.5 ? 1 : 0
     const emptyStar = 5 - fullStar - halfStar

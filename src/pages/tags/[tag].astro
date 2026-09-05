@@ -1,58 +1,9 @@
 ---
-import PostsLayout from '@layouts/PostsLayout.astro'
-import {getCollection} from "astro:content";
-export const prerender = false
+import PostsLayout from '@layouts/PostsLayout.astro';
 
+export const prerender = false;
 
-
-export async function getStaticPaths() {
-    const paths: any[] = [];
-    
-    // Get tags from Chinese posts
-    const zhPosts = await getCollection('posts');
-    const zhTags = [
-        ...new Set(
-            zhPosts
-                .filter((i) => i.data.tags)
-                .map((i) => i.data.tags)
-                .flat()
-        )
-    ];
-    paths.push(...zhTags.map((tag) => {
-        return {
-            params: {
-                tag: tag.replace(/\s/g, '-')
-            },
-            props: {
-                tag
-            }
-        }
-    }));
-    
-    // Get tags from English posts
-    const enPosts = await getCollection('posts-en');
-    const enTags = [
-        ...new Set(
-            enPosts
-                .filter((i) => i.data.tags)
-                .map((i) => i.data.tags)
-                .flat()
-        )
-    ];
-    paths.push(...enTags.map((tag) => {
-        return {
-            params: {
-                tag: tag.replace(/\s/g, '-')
-            },
-            props: {
-                tag
-            }
-        }
-    }));
-    
-    return paths;
-}
-const { tag } = Astro.props
+const { tag } = Astro.params;
 ---
 
-<PostsLayout tag={tag} category="" />
+<PostsLayout tag={tag ?? ''} category="" />

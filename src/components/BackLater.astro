@@ -1,6 +1,6 @@
 ---
 import { useLocale } from '@utils/locale'
-const { t } = useLocale(Astro.url)
+const { t } = useLocale(Astro.url, Astro.locals.locale)
 ---
 
 <div class="font-semibold italic">

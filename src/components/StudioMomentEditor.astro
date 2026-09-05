@@ -1,11 +1,4 @@
 ---
-// get api url from env
-
-
-import {API_URL,API_SECRET} from 'astro:env/server'
-
-const apiUrl = API_URL
-const secret = API_SECRET
 const {id} = Astro.props
 const tags = ['影视','影评','音乐','叽叽喳喳']
 ---
@@ -52,10 +45,11 @@ const tags = ['影视','影评','音乐','叽叽喳喳']
         
         if (momentId) {
             try {
-                const { data } = await actions.getMoment({id:momentId} as any);
+                const result = await actions.getMoment({ id: momentId });
+                if (result.error) throw new Error(result.error.message);
                 
-                if (data) {
-                    const { tags, body } = data;
+                if (result.data) {
+                    const { tags, body } = result.data;
                     const tagSelect = document.getElementById('tag') as HTMLSelectElement;
                     const contentTextarea = document.getElementById('content') as HTMLTextAreaElement;
                     
@@ -65,7 +59,7 @@ const tags = ['影视','影评','音乐','叽叽喳喳']
                     updateNotificationMessage(`Failed to get moment info: ${momentId}`);
                 }
             } catch (error) {
-                updateNotificationMessage(`Error loading moment: ${error}`);
+                updateNotificationMessage(`Error loading moment: ${error instanceof Error ? error.message : String(error)}`);
             }
         }
     }
@@ -85,20 +79,23 @@ const tags = ['影视','影评','音乐','叽叽喳喳']
             if (momentId) {
                 // Update existing moment
               
-                const { data } = await actions.updateMoment({
+                const result = await actions.updateMoment({
                     id: momentId,
                     tags: tag,
-                    body: content
-                } as any);
+                    body: content,
+                });
+                if (result.error) throw new Error(result.error.message);
 
-                if (data?.status === 200 || data?.status === 201) {
+                if (result.data?.ok) {
                     updateNotificationMessage('Update success!');
                 } else {
-                    updateNotificationMessage(`Update failed: ${data?.text || 'Unknown error'}`);
+                    updateNotificationMessage('Update failed');
                 }
             } else {
                 // Create new moment
-                 const { data: momentId } = await actions.createMoment({tags:tag,body:content} as any );
+                 const result = await actions.createMoment({ tags: tag, body: content });
+                 if (result.error) throw new Error(result.error.message);
+                 const momentId = result.data;
 
                 if (momentId) {
                     updateNotificationMessage('Post success!');
@@ -107,7 +104,7 @@ const tags = ['影视','影评','音乐','叽叽喳喳']
                 }
             }
         } catch (error) {
-            updateNotificationMessage(`Error: ${error}`);
+            updateNotificationMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
         }
     });
 

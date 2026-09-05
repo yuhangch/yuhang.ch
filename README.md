@@ -8,10 +8,13 @@ see the internal doc at `src/content/docs/overview/tech-stack.md`.
 
 ## Tech stack (short version)
 
-- **Framework**: Astro (server output, deployed on Vercel)
+- **Framework**: Astro 7.3.1 (server output, deployed on Vercel)
 - **Content**: Collections under `src/content` (`posts`, `posts-en`, `docs`, `whois`, etc.)
+- **Markdown**: Explicit Unified pipeline via `@astrojs/markdown-remark`, with the project's remark plugins
 - **Styling**: UnoCSS, Expressive Code, custom typography / prose styles
-- **i18n**: `astro-i18n-aut` (currently `zh` and `en`)
+- **i18n**: Astro official i18n with manual routing (`/` is Chinese and `/en/` is English)
+- **Live data**: Typed API services and Live Collections for Moments, Reviews, and Places
+- **Mutations**: Astro Actions with Zod validation, Studio authentication, and explicit `ActionError`s
 - **Runtime**: Node 22.x + `@astrojs/vercel` adapter
 
 ## Development
@@ -21,6 +24,16 @@ see the internal doc at `src/content/docs/overview/tech-stack.md`.
 
 Using `pnpm` (recommended):
 
+```bash
+pnpm install
+pnpm dev
+pnpm astro check
+pnpm build
+```
+
+Copy `.env.example` to `.env` and fill in the server secrets before using Studio or live API pages.
+
+`API_SECRET`, `STUDIO_SECRET`, and `AMAP_KEY` are server-only secrets. `MAPBOX_TOKEN` is intentionally a public client variable because it is used by the browser map.
 
 
 ## License

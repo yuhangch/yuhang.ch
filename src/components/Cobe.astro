@@ -1,10 +1,11 @@
 ---
-export const prerender = true
-import {placesLoader} from "@loaders/places";
-const loader = placesLoader();
-const places = await loader.load();
-const location = places.map(({latitude, longitude}) => ({
-    location: [latitude, longitude],
+import { getLiveCollection } from 'astro:content';
+const livePlaces = await getLiveCollection('places');
+const places = livePlaces.entries?.map(({ data }) => data) ?? [];
+const location = places
+    .filter(({ latitude, longitude }) => latitude !== undefined && longitude !== undefined)
+    .map(({ latitude, longitude }) => ({
+    location: [latitude, longitude] as [number, number],
     size: 0.03
 }));
 ---
@@ -40,7 +41,7 @@ const location = places.map(({latitude, longitude}) => ({
         glowColor: [0.5, 0.5, 0.5], // 更改
         markers:locations,
         scale: 1.1,
-        onRender: (state) => {
+        onRender: (_state) => {
         }
     });
 </script>

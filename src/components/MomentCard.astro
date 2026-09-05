@@ -2,21 +2,10 @@
 import {relativeTo} from '@utils/format'
 import {useLocale} from '@utils/locale'
 import MarkdownIt from 'markdown-it'
-interface Props {
-    content: {
-        id: string
-        body: string
-        created_at: string
-        tags: string,
-        title: string,
-        title_en: string,
-        imdb_id: string,
-        name: string,
-        name_en: string
-    }
-}
+import type { Moment } from '../services/api'
+interface Props { content: Moment }
 
-const {t, path, locale} = useLocale(Astro.url)
+const {path, locale} = useLocale(Astro.url, Astro.locals.locale)
 const {id, body, created_at, tags,title,title_en,imdb_id,name,name_en} = Astro.props.content
 
 // 统一使用title字段，如果是review则使用title，如果是place则使用name

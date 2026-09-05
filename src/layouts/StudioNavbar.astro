@@ -2,15 +2,15 @@
 import { useLocale } from '@utils/locale';
 
 const { url } = Astro;
-const { path, t, locale } = useLocale(url);
+const { path, t } = useLocale(url, Astro.locals.locale);
 
 const items = ['moments', 'reviews', 'places'];
-const routePath = (item) => {
+const routePath = (item: string): string => {
     if (item === 'moments') return path('/studio');
     if (item === 'places') return path('/studio/places');
     return path(`/studio/${item}`);
 };
-const isActive = (item) =>
+const isActive = (item: string): string =>
     (url.toString().endsWith('studio/') && item === 'moments') ||
     url.toString().includes(item)
         ? 'active'

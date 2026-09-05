@@ -1,12 +1,12 @@
 import { stringify } from 'yaml';
 
-export function serializeFrontmatter(frontmatter: Record<string, unknown>): string {
+export function serializeFrontmatter(frontmatter: object): string {
     return stringify(frontmatter, { lineWidth: 0 }).trimEnd();
 }
 
 export function entryToMarkdown(entry: {
     body?: string;
-    data: Record<string, unknown>;
+    data: object;
 }): string {
     const frontmatter = serializeFrontmatter(entry.data);
     const body = entry.body ?? '';
