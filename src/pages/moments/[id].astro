@@ -15,6 +15,10 @@ if (!id) {
 
 const result = await getLiveEntry('moments', { id });
 if (result.error) {
+    if (result.error.name === 'LiveEntryNotFoundError') {
+        Astro.response.status = 404;
+        return new Response('Not found', { status: 404 });
+    }
     console.error(`[moments/${id}] Failed to load moment:`, result.error);
     Astro.response.status = 503;
     return new Response('Moment is temporarily unavailable', { status: 503 });

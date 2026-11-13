@@ -11,18 +11,24 @@ import {
     type Review,
 } from './services/api';
 
+// D1 returns integer ids and SQL NULL for unmatched review/place columns.
+const optionalText = z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined);
+
 const momentSchema = z.object({
-    id: z.string(),
+    id: z.coerce.string(),
     body: z.string(),
     created_at: z.string(),
-    tags: z.string().optional(),
-    title: z.string().optional(),
-    title_en: z.string().optional(),
-    imdb_id: z.string().optional(),
-    name: z.string().optional(),
-    name_en: z.string().optional(),
-    location: z.string().optional(),
-    image: z.string().optional(),
+    tags: optionalText,
+    title: optionalText,
+    title_en: optionalText,
+    imdb_id: optionalText,
+    name: optionalText,
+    name_en: optionalText,
+    location: optionalText,
+    image: optionalText,
 });
 
 const reviewSchema = z.object({
